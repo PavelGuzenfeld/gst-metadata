@@ -1,12 +1,11 @@
 #pragma once
 
-#include "meta_base.hpp"
+#include <gst-metadata/meta_base.hpp>
 
 #include <cstdint>
 
-namespace gstmeta {
+namespace gstmeta::examples {
 
-/// Crop region payload.
 struct CropData {
     std::int32_t top{};
     std::int32_t bottom{};
@@ -22,4 +21,4 @@ public:
     static constexpr std::uint32_t current_version() { return 1; }
 };
 
-} // namespace gstmeta
+} // namespace gstmeta::examples

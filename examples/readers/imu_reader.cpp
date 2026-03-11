@@ -1,4 +1,4 @@
-#include <gst-metadata/meta_imu.hpp>
+#include <gst-metadata-examples/meta_imu.hpp>
 #include <gst/base/gstbasetransform.h>
 
 struct GstImuReader {
@@ -19,7 +19,7 @@ static GstStaticPadTemplate src_tmpl = GST_STATIC_PAD_TEMPLATE(
 static GstFlowReturn imu_reader_transform_ip([[maybe_unused]] GstBaseTransform* base,
                                               GstBuffer* buf)
 {
-    auto imu = gstmeta::ImuMeta::get(buf);
+    auto imu = gstmeta::examples::ImuMeta::get(buf);
     if (imu) {
         g_print("[imureader] ts=%" G_GUINT64_FORMAT " accel=(%.2f,%.2f,%.2f) temp=%.1f\n",
                 imu->timestamp_ns,

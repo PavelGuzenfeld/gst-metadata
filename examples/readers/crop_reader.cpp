@@ -1,4 +1,4 @@
-#include <gst-metadata/meta_crop.hpp>
+#include <gst-metadata-examples/meta_crop.hpp>
 #include <gst/base/gstbasetransform.h>
 
 struct GstCropReader {
@@ -19,7 +19,7 @@ static GstStaticPadTemplate src_tmpl = GST_STATIC_PAD_TEMPLATE(
 static GstFlowReturn crop_reader_transform_ip([[maybe_unused]] GstBaseTransform* base,
                                                GstBuffer* buf)
 {
-    auto crop = gstmeta::CropMeta::get(buf);
+    auto crop = gstmeta::examples::CropMeta::get(buf);
     if (crop) {
         g_print("[cropreader] top=%d bottom=%d left=%d right=%d\n",
                 crop->top, crop->bottom, crop->left, crop->right);

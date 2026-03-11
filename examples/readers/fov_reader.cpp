@@ -1,4 +1,4 @@
-#include <gst-metadata/meta_fov.hpp>
+#include <gst-metadata-examples/meta_fov.hpp>
 #include <gst/base/gstbasetransform.h>
 
 struct GstFovReader {
@@ -19,7 +19,7 @@ static GstStaticPadTemplate src_tmpl = GST_STATIC_PAD_TEMPLATE(
 static GstFlowReturn fov_reader_transform_ip([[maybe_unused]] GstBaseTransform* base,
                                               GstBuffer* buf)
 {
-    auto fov = gstmeta::FovMeta::get(buf);
+    auto fov = gstmeta::examples::FovMeta::get(buf);
     if (fov) {
         g_print("[fovreader] h=%.1f° v=%.1f° d=%.1f°\n",
                 fov->horizontal_deg, fov->vertical_deg, fov->diagonal_deg);

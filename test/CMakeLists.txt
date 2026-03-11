@@ -8,4 +8,5 @@ FetchContent_MakeAvailable(doctest)
 
 add_executable(test_meta_compose test_meta_compose.cpp)
 target_link_libraries(test_meta_compose PRIVATE gst-metadata doctest::doctest)
+target_include_directories(test_meta_compose PRIVATE ${CMAKE_SOURCE_DIR}/examples/include)
 add_test(NAME meta_compose COMMAND test_meta_compose)

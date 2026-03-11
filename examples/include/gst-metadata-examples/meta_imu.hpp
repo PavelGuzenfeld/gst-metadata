@@ -1,12 +1,11 @@
 #pragma once
 
-#include "meta_base.hpp"
+#include <gst-metadata/meta_base.hpp>
 
 #include <cstdint>
 
-namespace gstmeta {
+namespace gstmeta::examples {
 
-/// IMU sensor payload.
 struct ImuData {
     std::uint64_t timestamp_ns{};
     float accel_x{};
@@ -21,7 +20,6 @@ struct ImuData {
     float altitude{};
 };
 
-// Unique names — file-scope linkage, used as template args.
 inline constexpr char ImuApiName[] = "GstImuMetaAPI";
 inline constexpr char ImuInfoName[] = "GstImuMetaInfo";
 
@@ -30,4 +28,4 @@ public:
     static constexpr std::uint32_t current_version() { return 1; }
 };
 
-} // namespace gstmeta
+} // namespace gstmeta::examples

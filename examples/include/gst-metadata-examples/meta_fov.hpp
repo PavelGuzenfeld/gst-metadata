@@ -1,10 +1,9 @@
 #pragma once
 
-#include "meta_base.hpp"
+#include <gst-metadata/meta_base.hpp>
 
-namespace gstmeta {
+namespace gstmeta::examples {
 
-/// Field-of-view payload.
 struct FovData {
     float horizontal_deg{};
     float vertical_deg{};
@@ -19,4 +18,4 @@ public:
     static constexpr std::uint32_t current_version() { return 1; }
 };
 
-} // namespace gstmeta
+} // namespace gstmeta::examples

@@ -9,6 +9,10 @@
 #     videotestsrc num-buffers=5 ! imuwriter ! cropwriter ! fovwriter ! \
 #     imureader ! cropreader ! fovreader ! fakesink
 
+# Example metadata type headers (IMU, Crop, FOV) live here.
+# These are NOT part of the library — they demonstrate how to define
+# concrete metadata types using gst-metadata/meta_base.hpp.
+
 # --- Writers plugin ---------------------------------------------------------
 add_library(gstmetawriters SHARED
     writers/imu_writer.cpp
@@ -17,6 +21,7 @@ add_library(gstmetawriters SHARED
     writers/writers_plugin.cpp
 )
 target_link_libraries(gstmetawriters PRIVATE gst-metadata)
+target_include_directories(gstmetawriters PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set_target_properties(gstmetawriters PROPERTIES PREFIX "libgst" OUTPUT_NAME "metawriters")
 
 # --- Readers plugin ---------------------------------------------------------
@@ -27,4 +32,5 @@ add_library(gstmetareaders SHARED
     readers/readers_plugin.cpp
 )
 target_link_libraries(gstmetareaders PRIVATE gst-metadata)
+target_include_directories(gstmetareaders PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 set_target_properties(gstmetareaders PROPERTIES PREFIX "libgst" OUTPUT_NAME "metareaders")

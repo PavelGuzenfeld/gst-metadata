@@ -1,4 +1,4 @@
-#include <gst-metadata/meta_imu.hpp>
+#include <gst-metadata-examples/meta_imu.hpp>
 #include <gst/base/gstbasetransform.h>
 
 #include <cstdint>
@@ -26,14 +26,14 @@ static GstFlowReturn imu_writer_transform_ip(GstBaseTransform* base,
 {
     auto* self = reinterpret_cast<GstImuWriter*>(base);
 
-    gstmeta::ImuData imu{};
+    gstmeta::examples::ImuData imu{};
     imu.timestamp_ns = GST_BUFFER_PTS(buf);
     imu.accel_x = 0.0F;
     imu.accel_y = 0.0F;
     imu.accel_z = -9.81F;
     imu.temperature = 25.0F + static_cast<float>(self->frame_count) * 0.1F;
 
-    gstmeta::ImuMeta::add(buf, imu);
+    gstmeta::examples::ImuMeta::add(buf, imu);
     self->frame_count++;
     return GST_FLOW_OK;
 }

@@ -1,4 +1,4 @@
-#include <gst-metadata/meta_fov.hpp>
+#include <gst-metadata-examples/meta_fov.hpp>
 #include <gst/base/gstbasetransform.h>
 
 struct GstFovWriter {
@@ -19,9 +19,9 @@ static GstStaticPadTemplate src_tmpl = GST_STATIC_PAD_TEMPLATE(
 static GstFlowReturn fov_writer_transform_ip([[maybe_unused]] GstBaseTransform* base,
                                               GstBuffer* buf)
 {
-    gstmeta::FovData fov{
+    gstmeta::examples::FovData fov{
         .horizontal_deg = 82.0F, .vertical_deg = 52.0F, .diagonal_deg = 97.0F};
-    gstmeta::FovMeta::add(buf, fov);
+    gstmeta::examples::FovMeta::add(buf, fov);
     return GST_FLOW_OK;
 }
 
