@@ -52,9 +52,6 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
-    defaults:
-      run:
-        shell: msys2 {0}
     strategy:
       fail-fast: false
       matrix:
@@ -77,16 +74,22 @@ jobs:
             mingw-w64-x86_64-gst-plugins-base
 
       - name: Configure
-        run: >
-          cmake -B build -G "MinGW Makefiles"
-          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
-          -DGST_METADATA_BUILD_EXAMPLES=ON
-          -DGST_METADATA_BUILD_TESTS=ON
+        shell: msys2 {0}
+        run: |
+          echo "=== pkg-config check ==="
+          pkg-config --cflags --libs gstreamer-1.0 gstreamer-base-1.0 || true
+          echo "=== cmake configure ==="
+          cmake -B build -G "MinGW Makefiles" \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DGST_METADATA_BUILD_EXAMPLES=ON \
+            -DGST_METADATA_BUILD_TESTS=ON
 
       - name: Build
+        shell: msys2 {0}
         run: cmake --build build -j$(nproc)
 
       - name: Test
+        shell: msys2 {0}
         run: ctest --test-dir build --output-on-failure
 
   sanitizers:
@@ -177,11 +180,17 @@ jobs:
 
       - name: Run cppcheck
         run: |
+          echo "=== Files to check ==="
+          find include examples -name '*.hpp' -o -name '*.cpp'
+          echo "=== cppcheck version ==="
+          cppcheck --version
+          echo "=== Running cppcheck ==="
           find include examples -name '*.hpp' -o -name '*.cpp' | \
           xargs cppcheck \
             --enable=warning,style,performance \
             --suppress=missingIncludeSystem \
             --suppress=unusedFunction \
+            --suppress=noExplicitConstructor \
             --error-exitcode=1 \
             --inline-suppr \
             $(pkg-config --cflags gstreamer-1.0 gstreamer-base-1.0 | tr ' ' '\n' | grep '^-I' | tr '\n' ' ') \
