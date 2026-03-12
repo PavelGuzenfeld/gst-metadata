@@ -174,16 +174,15 @@ jobs:
           -DGST_METADATA_BUILD_TESTS=ON
 
       - name: Run cppcheck
-        run: >
-          cppcheck
-          --project=build/compile_commands.json
-          --enable=warning,style,performance
-          --suppress=missingIncludeSystem
-          --suppress=*:*/_deps/*
-          --suppress=*:*/test/*
-          --error-exitcode=1
-          --inline-suppr
-          --quiet
+        run: |
+          cppcheck \
+            --project=build/compile_commands.json \
+            --enable=warning,style,performance \
+            --suppress=missingIncludeSystem \
+            -i build/_deps \
+            --error-exitcode=1 \
+            --inline-suppr \
+            --quiet
 
       - name: Run clang-tidy
         run: >
