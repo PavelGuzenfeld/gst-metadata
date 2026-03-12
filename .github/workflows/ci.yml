@@ -52,36 +52,38 @@ jobs:
 
   build-windows:
     runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
     strategy:
       matrix:
         build_type: [Debug, Release]
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install GStreamer (runtime + devel)
-        shell: pwsh
-        run: |
-          $GST_VERSION = "1.24.12"
-          $BASE_URL = "https://gstreamer.freedesktop.org/data/pkg/windows/$GST_VERSION"
-          Invoke-WebRequest "$BASE_URL/msvc/gstreamer-1.0-msvc-x86_64-$GST_VERSION.msi" -OutFile runtime.msi
-          Invoke-WebRequest "$BASE_URL/msvc/gstreamer-1.0-devel-msvc-x86_64-$GST_VERSION.msi" -OutFile devel.msi
-          Start-Process msiexec.exe -ArgumentList '/i', 'runtime.msi', '/quiet', '/norestart', 'INSTALLDIR=C:\gstreamer' -Wait
-          Start-Process msiexec.exe -ArgumentList '/i', 'devel.msi', '/quiet', '/norestart', 'INSTALLDIR=C:\gstreamer' -Wait
-          echo "GSTREAMER_ROOT=C:\gstreamer\1.0\msvc_x86_64" >> $env:GITHUB_ENV
-          echo "C:\gstreamer\1.0\msvc_x86_64\bin" >> $env:GITHUB_PATH
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: >-
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-pkg-config
+            mingw-w64-ucrt-x86_64-gstreamer
+            mingw-w64-ucrt-x86_64-gst-plugins-base
 
       - name: Configure
         run: >
-          cmake -B build
+          cmake -B build -G "MinGW Makefiles"
           -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
           -DGST_METADATA_BUILD_EXAMPLES=ON
           -DGST_METADATA_BUILD_TESTS=ON
 
       - name: Build
-        run: cmake --build build --config ${{ matrix.build_type }}
+        run: cmake --build build -j$(nproc)
 
       - name: Test
-        run: ctest --test-dir build --build-config ${{ matrix.build_type }} --output-on-failure
+        run: ctest --test-dir build --output-on-failure
 
   sanitizers:
     runs-on: ubuntu-latest
