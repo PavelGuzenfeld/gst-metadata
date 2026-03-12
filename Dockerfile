@@ -27,6 +27,19 @@ RUN cmake -B build \
 # Run unit tests
 RUN cd build && ctest --output-on-failure
 
+# Run unit tests with ASan + UBSan
+RUN cmake -B build-asan \
+    -DCMAKE_BUILD_TYPE=Debug \
+    -DGST_METADATA_BUILD_EXAMPLES=ON \
+    -DGST_METADATA_BUILD_TESTS=ON \
+    -DGST_METADATA_SANITIZER_ASAN=ON \
+    && cmake --build build-asan -j$(nproc)
+
+RUN cd build-asan && \
+    ASAN_OPTIONS=detect_leaks=1:abort_on_error=1 \
+    UBSAN_OPTIONS=print_stacktrace=1:halt_on_error=1 \
+    ctest --output-on-failure
+
 # --- Integration test stage -------------------------------------------------
 FROM ubuntu:24.04 AS test
 

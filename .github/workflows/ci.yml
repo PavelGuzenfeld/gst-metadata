@@ -1,0 +1,154 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: >-
+            build-essential
+            cmake
+            pkg-config
+            libgstreamer1.0-dev
+            libgstreamer-plugins-base1.0-dev
+            gstreamer1.0-tools
+            gstreamer1.0-plugins-base
+            gstreamer1.0-plugins-good
+          version: 1.0
+
+      - name: Configure
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          -DGST_METADATA_BUILD_EXAMPLES=ON
+          -DGST_METADATA_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
+
+      - name: Upload compile_commands.json
+        if: matrix.build_type == 'Debug'
+        uses: actions/upload-artifact@v4
+        with:
+          name: compile-commands
+          path: build/compile_commands.json
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        sanitizer:
+          - { name: asan, cmake_flag: GST_METADATA_SANITIZER_ASAN }
+          - { name: tsan, cmake_flag: GST_METADATA_SANITIZER_TSAN }
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: >-
+            build-essential
+            cmake
+            pkg-config
+            libgstreamer1.0-dev
+            libgstreamer-plugins-base1.0-dev
+            gstreamer1.0-tools
+            gstreamer1.0-plugins-base
+            gstreamer1.0-plugins-good
+          version: 1.0
+
+      - name: Configure (${{ matrix.sanitizer.name }})
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=Debug
+          -DGST_METADATA_BUILD_EXAMPLES=ON
+          -DGST_METADATA_BUILD_TESTS=ON
+          -D${{ matrix.sanitizer.cmake_flag }}=ON
+
+      - name: Build
+        run: cmake --build build -j$(nproc)
+
+      - name: Test (${{ matrix.sanitizer.name }})
+        env:
+          ASAN_OPTIONS: detect_leaks=1:abort_on_error=1
+          UBSAN_OPTIONS: print_stacktrace=1:halt_on_error=1
+          TSAN_OPTIONS: halt_on_error=1
+        run: ctest --test-dir build --output-on-failure
+
+  integration:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build Docker image
+        run: docker build --target test -t gst-metadata-test .
+
+      - name: Run integration tests
+        run: docker run --rm gst-metadata-test
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache apt packages
+        uses: awalsh128/cache-apt-pkgs-action@latest
+        with:
+          packages: >-
+            build-essential
+            cmake
+            pkg-config
+            libgstreamer1.0-dev
+            libgstreamer-plugins-base1.0-dev
+            cppcheck
+            clang-tidy
+          version: 1.0
+
+      - name: Download compile_commands.json
+        uses: actions/download-artifact@v4
+        with:
+          name: compile-commands
+          path: build
+
+      - name: Configure (for headers)
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=Debug
+          -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+          -DGST_METADATA_BUILD_EXAMPLES=ON
+          -DGST_METADATA_BUILD_TESTS=ON
+
+      - name: Run cppcheck
+        run: >
+          cppcheck
+          --project=build/compile_commands.json
+          --enable=warning,style,performance
+          --suppress=missingIncludeSystem
+          --error-exitcode=1
+          --inline-suppr
+          --quiet
+
+      - name: Run clang-tidy
+        run: >
+          find include examples -name '*.hpp' -o -name '*.cpp' |
+          xargs clang-tidy -p build
+          --warnings-as-errors='*'
+          --quiet

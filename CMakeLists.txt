@@ -29,6 +29,24 @@ target_link_libraries(gst-metadata INTERFACE PkgConfig::GST)
 # Alias for use from parent CMake projects (e.g. FetchContent)
 add_library(gstmeta::gstmeta ALIAS gst-metadata)
 
+# --- Sanitizers -------------------------------------------------------------
+option(GST_METADATA_SANITIZER_ASAN "Enable AddressSanitizer + UndefinedBehaviorSanitizer" OFF)
+option(GST_METADATA_SANITIZER_TSAN "Enable ThreadSanitizer" OFF)
+
+if(GST_METADATA_SANITIZER_ASAN AND GST_METADATA_SANITIZER_TSAN)
+    message(FATAL_ERROR "ASan and TSan cannot be used together")
+endif()
+
+if(GST_METADATA_SANITIZER_ASAN)
+    add_compile_options(-fsanitize=address,undefined -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=address,undefined)
+endif()
+
+if(GST_METADATA_SANITIZER_TSAN)
+    add_compile_options(-fsanitize=thread -fno-omit-frame-pointer)
+    add_link_options(-fsanitize=thread)
+endif()
+
 # --- Example GStreamer plugins ----------------------------------------------
 option(GST_METADATA_BUILD_EXAMPLES "Build example GStreamer plugins" ON)
 if(GST_METADATA_BUILD_EXAMPLES)
