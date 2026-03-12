@@ -10,11 +10,32 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
 # --- Dependencies -----------------------------------------------------------
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(GST REQUIRED IMPORTED_TARGET
-    gstreamer-1.0
-    gstreamer-base-1.0
-)
+find_package(PkgConfig QUIET)
+if(PkgConfig_FOUND)
+    pkg_check_modules(GST REQUIRED IMPORTED_TARGET
+        gstreamer-1.0
+        gstreamer-base-1.0
+    )
+    set(_GST_TARGET PkgConfig::GST)
+else()
+    # Fallback for platforms without pkg-config (e.g. Windows).
+    # Expects GSTREAMER_ROOT or GSTREAMER_1_0_ROOT_MSVC_X86_64 to be set.
+    if(DEFINED ENV{GSTREAMER_ROOT})
+        set(_GST_ROOT "$ENV{GSTREAMER_ROOT}")
+    elseif(DEFINED ENV{GSTREAMER_1_0_ROOT_MSVC_X86_64})
+        set(_GST_ROOT "$ENV{GSTREAMER_1_0_ROOT_MSVC_X86_64}")
+    else()
+        message(FATAL_ERROR
+            "pkg-config not found and GSTREAMER_ROOT is not set. "
+            "Install pkg-config or set GSTREAMER_ROOT to your GStreamer installation.")
+    endif()
+
+    add_library(_gst_imported INTERFACE)
+    target_include_directories(_gst_imported INTERFACE "${_GST_ROOT}/include/gstreamer-1.0" "${_GST_ROOT}/include/glib-2.0" "${_GST_ROOT}/lib/glib-2.0/include")
+    target_link_directories(_gst_imported INTERFACE "${_GST_ROOT}/lib")
+    target_link_libraries(_gst_imported INTERFACE gstreamer-1.0 gstbase-1.0 gobject-2.0 glib-2.0)
+    set(_GST_TARGET _gst_imported)
+endif()
 
 # --- Header-only library target ---------------------------------------------
 # The core library is header-only (CRTP templates).
@@ -24,7 +45,7 @@ target_include_directories(gst-metadata INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
-target_link_libraries(gst-metadata INTERFACE PkgConfig::GST)
+target_link_libraries(gst-metadata INTERFACE ${_GST_TARGET})
 
 # Alias for use from parent CMake projects (e.g. FetchContent)
 add_library(gstmeta::gstmeta ALIAS gst-metadata)

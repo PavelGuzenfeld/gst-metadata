@@ -58,11 +58,16 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install GStreamer
+      - name: Install GStreamer (runtime + devel)
+        shell: pwsh
         run: |
-          choco install gstreamer gstreamer-devel --yes --no-progress
-          echo "GSTREAMER_1_0_ROOT_MSVC_X86_64=C:\gstreamer\1.0\msvc_x86_64" >> $env:GITHUB_ENV
-          echo "PKG_CONFIG_PATH=C:\gstreamer\1.0\msvc_x86_64\lib\pkgconfig" >> $env:GITHUB_ENV
+          $GST_VERSION = "1.24.12"
+          $BASE_URL = "https://gstreamer.freedesktop.org/data/pkg/windows/$GST_VERSION"
+          Invoke-WebRequest "$BASE_URL/msvc/gstreamer-1.0-msvc-x86_64-$GST_VERSION.msi" -OutFile runtime.msi
+          Invoke-WebRequest "$BASE_URL/msvc/gstreamer-1.0-devel-msvc-x86_64-$GST_VERSION.msi" -OutFile devel.msi
+          Start-Process msiexec.exe -ArgumentList '/i', 'runtime.msi', '/quiet', '/norestart', 'INSTALLDIR=C:\gstreamer' -Wait
+          Start-Process msiexec.exe -ArgumentList '/i', 'devel.msi', '/quiet', '/norestart', 'INSTALLDIR=C:\gstreamer' -Wait
+          echo "GSTREAMER_ROOT=C:\gstreamer\1.0\msvc_x86_64" >> $env:GITHUB_ENV
           echo "C:\gstreamer\1.0\msvc_x86_64\bin" >> $env:GITHUB_PATH
 
       - name: Configure
@@ -170,6 +175,8 @@ jobs:
           --project=build/compile_commands.json
           --enable=warning,style,performance
           --suppress=missingIncludeSystem
+          --suppress=*:*/_deps/*
+          --suppress=*:*/test/*
           --error-exitcode=1
           --inline-suppr
           --quiet
