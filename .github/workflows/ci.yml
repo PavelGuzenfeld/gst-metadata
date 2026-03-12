@@ -67,12 +67,14 @@ jobs:
           msystem: MINGW64
           update: false
           install: >-
+            git
+            make
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-pkgconf
+            mingw-w64-x86_64-glib2
             mingw-w64-x86_64-gstreamer
             mingw-w64-x86_64-gst-plugins-base
-            make
 
       - name: Configure
         run: >
@@ -179,11 +181,12 @@ jobs:
           xargs cppcheck \
             --enable=warning,style,performance \
             --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
             --error-exitcode=1 \
             --inline-suppr \
-            --quiet \
             $(pkg-config --cflags gstreamer-1.0 gstreamer-base-1.0 | tr ' ' '\n' | grep '^-I' | tr '\n' ' ') \
-            -I include -I examples/include
+            -I include -I examples/include \
+            --std=c++20
 
       - name: Run clang-tidy
         run: >
