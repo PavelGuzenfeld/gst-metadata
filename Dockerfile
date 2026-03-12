@@ -40,9 +40,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gstreamer1.0-plugins-good \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy built plugins
-COPY --from=builder /src/build/examples/libgstmetawriters.so /usr/lib/gstreamer-1.0/
-COPY --from=builder /src/build/examples/libgstmetareaders.so /usr/lib/gstreamer-1.0/
+# Copy built plugins to the default GStreamer plugin directory
+COPY --from=builder /src/build/examples/libgstmetawriters.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
+COPY --from=builder /src/build/examples/libgstmetareaders.so /usr/lib/x86_64-linux-gnu/gstreamer-1.0/
 
 # Copy integration test script
 COPY test/integration_test.sh /test/

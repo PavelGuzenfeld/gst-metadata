@@ -22,6 +22,7 @@ add_library(gstmetawriters SHARED
 )
 target_link_libraries(gstmetawriters PRIVATE gst-metadata)
 target_include_directories(gstmetawriters PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_definitions(gstmetawriters PRIVATE PACKAGE="gst-metadata")
 set_target_properties(gstmetawriters PROPERTIES PREFIX "libgst" OUTPUT_NAME "metawriters")
 
 # --- Readers plugin ---------------------------------------------------------
@@ -33,4 +34,5 @@ add_library(gstmetareaders SHARED
 )
 target_link_libraries(gstmetareaders PRIVATE gst-metadata)
 target_include_directories(gstmetareaders PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+target_compile_definitions(gstmetareaders PRIVATE PACKAGE="gst-metadata")
 set_target_properties(gstmetareaders PROPERTIES PREFIX "libgst" OUTPUT_NAME "metareaders")

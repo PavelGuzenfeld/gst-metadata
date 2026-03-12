@@ -9,6 +9,7 @@ struct GstImuReaderClass {
     GstBaseTransformClass parent_class;
 };
 
+extern "C" GType gst_imu_reader_get_type(void);
 G_DEFINE_TYPE(GstImuReader, gst_imu_reader, GST_TYPE_BASE_TRANSFORM)
 
 static GstStaticPadTemplate sink_tmpl = GST_STATIC_PAD_TEMPLATE(
@@ -47,5 +48,3 @@ static void gst_imu_reader_init(GstImuReader* self)
     gst_base_transform_set_in_place(GST_BASE_TRANSFORM(self), TRUE);
     gst_base_transform_set_passthrough(GST_BASE_TRANSFORM(self), TRUE);
 }
-
-GType gst_imu_reader_get_type(void);

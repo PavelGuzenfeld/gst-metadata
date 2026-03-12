@@ -9,6 +9,7 @@ struct GstFovReaderClass {
     GstBaseTransformClass parent_class;
 };
 
+extern "C" GType gst_fov_reader_get_type(void);
 G_DEFINE_TYPE(GstFovReader, gst_fov_reader, GST_TYPE_BASE_TRANSFORM)
 
 static GstStaticPadTemplate sink_tmpl = GST_STATIC_PAD_TEMPLATE(
@@ -45,5 +46,3 @@ static void gst_fov_reader_init(GstFovReader* self)
     gst_base_transform_set_in_place(GST_BASE_TRANSFORM(self), TRUE);
     gst_base_transform_set_passthrough(GST_BASE_TRANSFORM(self), TRUE);
 }
-
-GType gst_fov_reader_get_type(void);

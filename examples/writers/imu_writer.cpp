@@ -14,6 +14,7 @@ struct GstImuWriterClass {
     GstBaseTransformClass parent_class;
 };
 
+extern "C" GType gst_imu_writer_get_type(void);
 G_DEFINE_TYPE(GstImuWriter, gst_imu_writer, GST_TYPE_BASE_TRANSFORM)
 
 static GstStaticPadTemplate sink_tmpl = GST_STATIC_PAD_TEMPLATE(
@@ -59,5 +60,3 @@ static void gst_imu_writer_init(GstImuWriter* self)
     gst_base_transform_set_passthrough(GST_BASE_TRANSFORM(self), TRUE);
     self->frame_count = 0;
 }
-
-GType gst_imu_writer_get_type(void);
