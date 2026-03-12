@@ -17,4 +17,4 @@ static gboolean plugin_init(GstPlugin* plugin)
 
 GST_PLUGIN_DEFINE(GST_VERSION_MAJOR, GST_VERSION_MINOR,
                   metawriters, "Metadata writer elements",
-                  plugin_init, "0.1", "LGPL", "gst-metadata", "https://github.com/PavelGuzenfeld/gst-metadata")
+                  plugin_init, "0.1", "MIT", "gst-metadata", "https://github.com/PavelGuzenfeld/gst-metadata")

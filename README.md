@@ -170,4 +170,4 @@ All methods are static on your derived class (e.g., `ImuMeta::add(...)`) via `Me
 
 ## License
 
-LGPL -- see source files for details.
+MIT -- see [LICENSE](LICENSE) for details.
