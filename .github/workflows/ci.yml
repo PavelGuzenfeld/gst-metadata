@@ -50,6 +50,34 @@ jobs:
           name: compile-commands
           path: build/compile_commands.json
 
+  build-windows:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        build_type: [Debug, Release]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install GStreamer
+        run: |
+          choco install gstreamer gstreamer-devel --yes --no-progress
+          echo "GSTREAMER_1_0_ROOT_MSVC_X86_64=C:\gstreamer\1.0\msvc_x86_64" >> $env:GITHUB_ENV
+          echo "PKG_CONFIG_PATH=C:\gstreamer\1.0\msvc_x86_64\lib\pkgconfig" >> $env:GITHUB_ENV
+          echo "C:\gstreamer\1.0\msvc_x86_64\bin" >> $env:GITHUB_PATH
+
+      - name: Configure
+        run: >
+          cmake -B build
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DGST_METADATA_BUILD_EXAMPLES=ON
+          -DGST_METADATA_BUILD_TESTS=ON
+
+      - name: Build
+        run: cmake --build build --config ${{ matrix.build_type }}
+
+      - name: Test
+        run: ctest --test-dir build --build-config ${{ matrix.build_type }} --output-on-failure
+
   sanitizers:
     runs-on: ubuntu-latest
     strategy:

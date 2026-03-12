@@ -74,3 +74,13 @@ install(EXPORT gst-metadata-targets
     NAMESPACE gstmeta::
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/gst-metadata
 )
+
+# --- pkg-config .pc file ----------------------------------------------------
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/gst-metadata.pc.in
+    ${CMAKE_CURRENT_BINARY_DIR}/gst-metadata.pc
+    @ONLY
+)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/gst-metadata.pc
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}/pkgconfig
+)

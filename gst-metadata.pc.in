@@ -1,0 +1,8 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: gst-metadata
+Description: Composable, type-safe, header-only GStreamer buffer metadata (C++20 CRTP)
+Version: @PROJECT_VERSION@
+Requires: gstreamer-1.0 gstreamer-base-1.0
+Cflags: -I${includedir}

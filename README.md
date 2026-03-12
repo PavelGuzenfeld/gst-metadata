@@ -87,6 +87,14 @@ find_package(gst-metadata REQUIRED)
 target_link_libraries(my_target PRIVATE gstmeta::gstmeta)
 ```
 
+### pkg-config
+
+After system install, you can also use pkg-config:
+
+```bash
+pkg-config --cflags --libs gst-metadata
+```
+
 ## Building
 
 ```bash
@@ -151,6 +159,30 @@ GST_PLUGIN_PATH=build/examples gst-launch-1.0 \
     videotestsrc num-buffers=5 ! imuwriter ! cropwriter ! fovwriter ! \
     imureader ! cropreader ! fovreader ! fakesink
 ```
+
+## Thread Safety
+
+- **GType registration** (`api_type()`, `info()`) uses `g_once_init_enter`/`g_once_init_leave` and is safe to call from any thread concurrently.
+- **Read operations** (`get`, `get_all`, `for_each`, `count`) are safe to call concurrently on the same buffer, as long as no thread is mutating metadata on that buffer at the same time.
+- **Write operations** (`add`, `remove`, `get_mut`) follow GStreamer's buffer ownership model: only the thread that owns the buffer (or holds a writable reference) should mutate it. This is standard GStreamer practice, not a limitation of this library.
+
+In a typical GStreamer pipeline, each buffer is owned by exactly one element at a time, so no additional synchronization is needed.
+
+## Performance
+
+- **Zero allocations** -- metadata is allocated inline in GStreamer's buffer metadata slab. `add()` calls `gst_buffer_add_meta()` (one slab allocation). No `new`/`malloc` in the library.
+- **Zero-copy reads** -- `get()` and `for_each()` read directly from the buffer metadata pointer. `get()` returns by value (one `memcpy` of your POD struct). `get_mut()` returns the pointer directly.
+- **O(n) iteration** -- `for_each()`, `get_all()`, `count()` iterate all metadata on the buffer filtered by GType. For buffers with a small number of metadata instances (typical case), this is effectively O(1).
+- **Compile-time dispatch** -- CRTP eliminates virtual function overhead. All type resolution happens at compile time.
+
+## API Stability
+
+This project follows [Semantic Versioning](https://semver.org/). The public API consists of all public methods in `MetaBase` and the `MetaHeader` struct layout.
+
+- **0.x.y** (current): The API is considered stable but may have minor adjustments before 1.0. Breaking changes will increment the minor version.
+- **1.0.0+** (future): The API will be frozen. Breaking changes will only occur in major version bumps.
+
+The `MetaHeader` (version + data_size) is designed for forward compatibility: readers compiled against an older struct version can safely read buffers written by a newer version.
 
 ## API Reference
 
