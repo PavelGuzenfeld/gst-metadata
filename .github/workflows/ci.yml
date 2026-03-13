@@ -181,11 +181,7 @@ jobs:
           find include examples -name '*.hpp' -o -name '*.cpp' | \
           xargs cppcheck \
             --enable=warning,style,performance \
-            --suppress=missingIncludeSystem \
-            --suppress=unusedFunction \
-            --suppress=unknownMacro \
-            --suppress=duplInheritedMember \
-            --suppress=constVariablePointer \
+            --suppressions-list=.cppcheck-suppressions \
             -I include -I examples/include \
             $(pkg-config --cflags gstreamer-1.0 gstreamer-base-1.0 2>/dev/null | tr ' ' '\n' | grep '^-I' | tr '\n' ' ') \
             --error-exitcode=1 \
