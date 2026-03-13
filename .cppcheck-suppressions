@@ -2,6 +2,5 @@ missingIncludeSystem
 unusedFunction
 unknownMacro
 duplInheritedMember
-constVariablePointer:include/gst-metadata/meta_base.hpp
-*:*doctest*
-*:*/_deps/*
+constVariablePointer
+unmatchedSuppression
