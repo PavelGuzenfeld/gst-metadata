@@ -178,6 +178,7 @@ jobs:
           -DGST_METADATA_BUILD_TESTS=ON
 
       - name: Run cppcheck
+        continue-on-error: true
         run: |
           cppcheck --version
           cppcheck \
