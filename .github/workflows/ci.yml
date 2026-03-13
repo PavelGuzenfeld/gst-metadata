@@ -78,6 +78,7 @@ jobs:
         run: |
           cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
             -DGST_METADATA_BUILD_EXAMPLES=ON \
             -DGST_METADATA_BUILD_TESTS=ON
 
@@ -177,16 +178,16 @@ jobs:
 
       - name: Run cppcheck
         run: |
-          cppcheck \
-            --project=build/compile_commands.json \
+          find include examples -name '*.hpp' -o -name '*.cpp' | \
+          xargs cppcheck \
             --enable=warning,style,performance \
             --suppress=missingIncludeSystem \
             --suppress=unusedFunction \
-            --suppress=noExplicitConstructor \
             --suppress=unknownMacro \
-            --suppress=uninitMemberVar \
-            --suppress=duplicateInheritedMember \
-            -i build/_deps \
+            --suppress=duplInheritedMember \
+            --suppress=constVariablePointer \
+            -I include -I examples/include \
+            $(pkg-config --cflags gstreamer-1.0 gstreamer-base-1.0 2>/dev/null | tr ' ' '\n' | grep '^-I' | tr '\n' ' ') \
             --error-exitcode=1 \
             --inline-suppr \
             --quiet
