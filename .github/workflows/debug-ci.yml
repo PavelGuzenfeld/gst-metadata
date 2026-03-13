@@ -27,17 +27,21 @@ jobs:
           -DGST_METADATA_BUILD_EXAMPLES=ON
           -DGST_METADATA_BUILD_TESTS=ON
 
-      - name: Run cppcheck verbose
+      - name: Run cppcheck and write summary
         run: |
-          cppcheck --version
-          echo "=== project scan ==="
-          cppcheck \
-            --project=build/compile_commands.json \
-            --enable=warning,style,performance \
-            --suppress=missingIncludeSystem \
-            --suppress=unusedFunction \
-            --suppress=noExplicitConstructor 2>&1 | head -100
-          echo "=== exit code: $? ==="
+          {
+            echo '## cppcheck output'
+            echo '```'
+            cppcheck --version
+            echo '---'
+            cppcheck \
+              --project=build/compile_commands.json \
+              --enable=warning,style,performance \
+              --suppress=missingIncludeSystem \
+              --suppress=unusedFunction \
+              --suppress=noExplicitConstructor 2>&1 | head -200
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
 
   debug-windows:
     runs-on: windows-latest
@@ -54,32 +58,27 @@ jobs:
             mingw-w64-x86_64-pkgconf mingw-w64-x86_64-glib2
             mingw-w64-x86_64-gstreamer mingw-w64-x86_64-gst-plugins-base
 
-      - name: Debug configure (allow failure)
+      - name: Debug configure and write summary
         shell: msys2 {0}
         run: |
           set +e
-          echo "=== Environment ==="
-          which cmake && cmake --version
-          which pkg-config && pkg-config --version
-          which gcc && gcc --version | head -1
-          which make && make --version | head -1
-          echo "=== pkg-config gstreamer ==="
-          pkg-config --cflags --libs gstreamer-1.0 gstreamer-base-1.0
-          echo "=== PWD and ls ==="
-          pwd
-          ls -la
-          echo "=== cmake configure ==="
-          cmake -B build -G "MinGW Makefiles" \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DGST_METADATA_BUILD_EXAMPLES=ON \
-            -DGST_METADATA_BUILD_TESTS=ON 2>&1
-          CMAKE_EXIT=$?
-          echo "=== cmake exit code: $CMAKE_EXIT ==="
-          if [ $CMAKE_EXIT -ne 0 ] && [ -f build/CMakeFiles/CMakeError.log ]; then
-            echo "=== CMakeError.log ==="
-            cat build/CMakeFiles/CMakeError.log
-          fi
-          if [ -f build/CMakeFiles/CMakeOutput.log ]; then
-            echo "=== CMakeOutput.log (last 50 lines) ==="
-            tail -50 build/CMakeFiles/CMakeOutput.log
-          fi
+          {
+            echo '## Windows configure output'
+            echo '```'
+            echo "cmake: $(which cmake)"
+            cmake --version
+            echo "pkg-config: $(pkg-config --modversion gstreamer-1.0 2>&1)"
+            echo "gcc: $(gcc -dumpversion)"
+            echo "---"
+            cmake -B build -G "MinGW Makefiles" \
+              -DCMAKE_BUILD_TYPE=Debug \
+              -DGST_METADATA_BUILD_EXAMPLES=ON \
+              -DGST_METADATA_BUILD_TESTS=ON 2>&1
+            echo "exit: $?"
+            echo "---"
+            if [ -f build/CMakeFiles/CMakeError.log ]; then
+              echo "=== CMakeError.log ==="
+              head -100 build/CMakeFiles/CMakeError.log
+            fi
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
