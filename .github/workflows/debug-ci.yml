@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
 
+permissions:
+  issues: write
+
 jobs:
   debug-cppcheck:
     runs-on: ubuntu-latest
@@ -27,21 +30,23 @@ jobs:
           -DGST_METADATA_BUILD_EXAMPLES=ON
           -DGST_METADATA_BUILD_TESTS=ON
 
-      - name: Run cppcheck and write summary
+      - name: Run cppcheck and create issue
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          {
-            echo '## cppcheck output'
-            echo '```'
-            cppcheck --version
-            echo '---'
-            cppcheck \
-              --project=build/compile_commands.json \
-              --enable=warning,style,performance \
-              --suppress=missingIncludeSystem \
-              --suppress=unusedFunction \
-              --suppress=noExplicitConstructor 2>&1 | head -200
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          OUTPUT=$(cppcheck \
+            --project=build/compile_commands.json \
+            --enable=warning,style,performance \
+            --suppress=missingIncludeSystem \
+            --suppress=unusedFunction \
+            --suppress=noExplicitConstructor 2>&1 | head -200)
+          VERSION=$(cppcheck --version)
+          BODY="$VERSION
+
+          \`\`\`
+          $OUTPUT
+          \`\`\`"
+          gh issue create --title "Debug: cppcheck output" --body "$BODY" --label "debug" || true
 
   debug-windows:
     runs-on: windows-latest
@@ -58,27 +63,34 @@ jobs:
             mingw-w64-x86_64-pkgconf mingw-w64-x86_64-glib2
             mingw-w64-x86_64-gstreamer mingw-w64-x86_64-gst-plugins-base
 
-      - name: Debug configure and write summary
+      - name: Debug configure and create issue
         shell: msys2 {0}
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          {
-            echo '## Windows configure output'
-            echo '```'
-            echo "cmake: $(which cmake)"
-            cmake --version
-            echo "pkg-config: $(pkg-config --modversion gstreamer-1.0 2>&1)"
-            echo "gcc: $(gcc -dumpversion)"
-            echo "---"
-            cmake -B build -G "MinGW Makefiles" \
-              -DCMAKE_BUILD_TYPE=Debug \
-              -DGST_METADATA_BUILD_EXAMPLES=ON \
-              -DGST_METADATA_BUILD_TESTS=ON 2>&1
-            echo "exit: $?"
-            echo "---"
-            if [ -f build/CMakeFiles/CMakeError.log ]; then
-              echo "=== CMakeError.log ==="
-              head -100 build/CMakeFiles/CMakeError.log
-            fi
-            echo '```'
-          } >> "$GITHUB_STEP_SUMMARY"
+          OUTPUT=$(cmake -B build -G "MinGW Makefiles" \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DGST_METADATA_BUILD_EXAMPLES=ON \
+            -DGST_METADATA_BUILD_TESTS=ON 2>&1)
+          EXIT_CODE=$?
+          ERROR_LOG=""
+          if [ -f build/CMakeFiles/CMakeError.log ]; then
+            ERROR_LOG=$(head -200 build/CMakeFiles/CMakeError.log)
+          fi
+          BODY="cmake exit: $EXIT_CODE
+
+          cmake: $(cmake --version | head -1)
+          gcc: $(gcc -dumpversion)
+          pkg-config gstreamer: $(pkg-config --modversion gstreamer-1.0 2>&1)
+
+          **cmake output:**
+          \`\`\`
+          $OUTPUT
+          \`\`\`
+
+          **CMakeError.log:**
+          \`\`\`
+          $ERROR_LOG
+          \`\`\`"
+          gh issue create --title "Debug: Windows cmake output" --body "$BODY" --label "debug" || true
