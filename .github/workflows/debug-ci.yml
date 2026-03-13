@@ -5,6 +5,7 @@ on:
     branches: [main]
 
 permissions:
+  contents: write
   issues: write
 
 jobs:
@@ -30,26 +31,29 @@ jobs:
           -DGST_METADATA_BUILD_EXAMPLES=ON
           -DGST_METADATA_BUILD_TESTS=ON
 
-      - name: Run cppcheck and create issue
-        env:
-          GH_TOKEN: ${{ github.token }}
+      - name: Run cppcheck and commit output
         run: |
-          OUTPUT=$(cppcheck \
-            --project=build/compile_commands.json \
-            --enable=warning,style,performance \
-            --suppress=missingIncludeSystem \
-            --suppress=unusedFunction \
-            --suppress=noExplicitConstructor 2>&1 | head -200)
-          VERSION=$(cppcheck --version)
-          BODY="$VERSION
-
-          \`\`\`
-          $OUTPUT
-          \`\`\`"
-          gh issue create --title "Debug: cppcheck output" --body "$BODY" --label "debug" || true
+          {
+            cppcheck --version
+            echo "---"
+            cppcheck \
+              --project=build/compile_commands.json \
+              --enable=warning,style,performance \
+              --suppress=missingIncludeSystem \
+              --suppress=unusedFunction \
+              --suppress=noExplicitConstructor 2>&1 | head -200
+          } > /tmp/cppcheck-output.txt
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git checkout -B debug-output
+          cp /tmp/cppcheck-output.txt debug-cppcheck-output.txt
+          git add debug-cppcheck-output.txt
+          git commit -m "Debug: cppcheck output"
+          git push origin debug-output --force
 
   debug-windows:
     runs-on: windows-latest
+    needs: debug-cppcheck
     steps:
       - uses: actions/checkout@v4
 
@@ -63,34 +67,32 @@ jobs:
             mingw-w64-x86_64-pkgconf mingw-w64-x86_64-glib2
             mingw-w64-x86_64-gstreamer mingw-w64-x86_64-gst-plugins-base
 
-      - name: Debug configure and create issue
+      - name: Debug configure and commit output
         shell: msys2 {0}
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           set +e
-          OUTPUT=$(cmake -B build -G "MinGW Makefiles" \
-            -DCMAKE_BUILD_TYPE=Debug \
-            -DGST_METADATA_BUILD_EXAMPLES=ON \
-            -DGST_METADATA_BUILD_TESTS=ON 2>&1)
-          EXIT_CODE=$?
-          ERROR_LOG=""
-          if [ -f build/CMakeFiles/CMakeError.log ]; then
-            ERROR_LOG=$(head -200 build/CMakeFiles/CMakeError.log)
-          fi
-          BODY="cmake exit: $EXIT_CODE
-
-          cmake: $(cmake --version | head -1)
-          gcc: $(gcc -dumpversion)
-          pkg-config gstreamer: $(pkg-config --modversion gstreamer-1.0 2>&1)
-
-          **cmake output:**
-          \`\`\`
-          $OUTPUT
-          \`\`\`
-
-          **CMakeError.log:**
-          \`\`\`
-          $ERROR_LOG
-          \`\`\`"
-          gh issue create --title "Debug: Windows cmake output" --body "$BODY" --label "debug" || true
+          {
+            echo "cmake: $(cmake --version | head -1)"
+            echo "gcc: $(gcc -dumpversion)"
+            echo "pkg-config gstreamer: $(pkg-config --modversion gstreamer-1.0 2>&1)"
+            echo "pkg-config cflags: $(pkg-config --cflags gstreamer-1.0 gstreamer-base-1.0 2>&1)"
+            echo "---"
+            cmake -B build -G "MinGW Makefiles" \
+              -DCMAKE_BUILD_TYPE=Debug \
+              -DGST_METADATA_BUILD_EXAMPLES=ON \
+              -DGST_METADATA_BUILD_TESTS=ON 2>&1
+            echo "exit: $?"
+            echo "---"
+            if [ -f build/CMakeFiles/CMakeError.log ]; then
+              echo "=== CMakeError.log ==="
+              head -200 build/CMakeFiles/CMakeError.log
+            fi
+          } > /tmp/windows-output.txt
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git fetch origin debug-output || true
+          git checkout debug-output || git checkout -B debug-output
+          cp /tmp/windows-output.txt debug-windows-output.txt
+          git add debug-windows-output.txt
+          git commit -m "Debug: Windows cmake output"
+          git push origin debug-output --force
