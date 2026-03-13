@@ -65,9 +65,9 @@ jobs:
           update: false
           install: >-
             git
-            make
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-cmake
+            mingw-w64-x86_64-ninja
             mingw-w64-x86_64-pkgconf
             mingw-w64-x86_64-glib2
             mingw-w64-x86_64-gstreamer
@@ -76,7 +76,7 @@ jobs:
       - name: Configure
         shell: msys2 {0}
         run: |
-          cmake -B build -G "MSYS Makefiles" \
+          cmake -B build -G Ninja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
             -DGST_METADATA_BUILD_EXAMPLES=ON \
             -DGST_METADATA_BUILD_TESTS=ON
@@ -185,8 +185,8 @@ jobs:
             --suppress=noExplicitConstructor \
             --suppress=unknownMacro \
             --suppress=uninitMemberVar \
-            --suppress='*:*/_deps/*' \
-            --suppress='*:*/doctest/*' \
+            --suppress=duplicateInheritedMember \
+            -i build/_deps \
             --error-exitcode=1 \
             --inline-suppr \
             --quiet
