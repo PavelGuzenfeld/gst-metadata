@@ -27,35 +27,17 @@ jobs:
           -DGST_METADATA_BUILD_EXAMPLES=ON
           -DGST_METADATA_BUILD_TESTS=ON
 
-      - name: Run cppcheck (verbose)
+      - name: Run cppcheck verbose
         run: |
-          echo "=== cppcheck version ===" | tee output.txt
-          cppcheck --version | tee -a output.txt
-          echo "" | tee -a output.txt
-          echo "=== With --project ===" | tee -a output.txt
-          cppcheck --project=build/compile_commands.json \
+          cppcheck --version
+          echo "=== project scan ==="
+          cppcheck \
+            --project=build/compile_commands.json \
             --enable=warning,style,performance \
             --suppress=missingIncludeSystem \
             --suppress=unusedFunction \
-            --suppress=noExplicitConstructor \
-            --force 2>&1 | tee -a output.txt || true
-          echo "" | tee -a output.txt
-          echo "=== Direct file scan ===" | tee -a output.txt
-          find include examples -name '*.hpp' -o -name '*.cpp' | \
-          xargs cppcheck \
-            --enable=warning,style,performance \
-            --suppress=missingIncludeSystem \
-            --suppress=unusedFunction \
-            -I include -I examples/include \
-            $(pkg-config --cflags gstreamer-1.0 gstreamer-base-1.0 | tr ' ' '\n' | grep '^-I' | tr '\n' ' ') \
-            --force 2>&1 | tee -a output.txt || true
-
-      - name: Upload output
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: cppcheck-output
-          path: output.txt
+            --suppress=noExplicitConstructor 2>&1 | head -100
+          echo "=== exit code: $? ==="
 
   debug-windows:
     runs-on: windows-latest
@@ -72,31 +54,32 @@ jobs:
             mingw-w64-x86_64-pkgconf mingw-w64-x86_64-glib2
             mingw-w64-x86_64-gstreamer mingw-w64-x86_64-gst-plugins-base
 
-      - name: Debug configure
+      - name: Debug configure (allow failure)
         shell: msys2 {0}
         run: |
-          echo "=== which cmake ===" | tee output.txt
-          which cmake | tee -a output.txt
-          echo "=== cmake version ===" | tee -a output.txt
-          cmake --version | tee -a output.txt
-          echo "=== which pkg-config ===" | tee -a output.txt
-          which pkg-config | tee -a output.txt
-          echo "=== pkg-config gstreamer ===" | tee -a output.txt
-          pkg-config --cflags --libs gstreamer-1.0 gstreamer-base-1.0 2>&1 | tee -a output.txt
-          echo "=== which gcc ===" | tee -a output.txt
-          which gcc | tee -a output.txt
-          gcc --version | head -1 | tee -a output.txt
-          echo "=== which make ===" | tee -a output.txt
-          which make | tee -a output.txt
-          echo "=== cmake configure ===" | tee -a output.txt
+          set +e
+          echo "=== Environment ==="
+          which cmake && cmake --version
+          which pkg-config && pkg-config --version
+          which gcc && gcc --version | head -1
+          which make && make --version | head -1
+          echo "=== pkg-config gstreamer ==="
+          pkg-config --cflags --libs gstreamer-1.0 gstreamer-base-1.0
+          echo "=== PWD and ls ==="
+          pwd
+          ls -la
+          echo "=== cmake configure ==="
           cmake -B build -G "MinGW Makefiles" \
             -DCMAKE_BUILD_TYPE=Debug \
             -DGST_METADATA_BUILD_EXAMPLES=ON \
-            -DGST_METADATA_BUILD_TESTS=ON 2>&1 | tee -a output.txt || true
-
-      - name: Upload output
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: windows-debug-output
-          path: output.txt
+            -DGST_METADATA_BUILD_TESTS=ON 2>&1
+          CMAKE_EXIT=$?
+          echo "=== cmake exit code: $CMAKE_EXIT ==="
+          if [ $CMAKE_EXIT -ne 0 ] && [ -f build/CMakeFiles/CMakeError.log ]; then
+            echo "=== CMakeError.log ==="
+            cat build/CMakeFiles/CMakeError.log
+          fi
+          if [ -f build/CMakeFiles/CMakeOutput.log ]; then
+            echo "=== CMakeOutput.log (last 50 lines) ==="
+            tail -50 build/CMakeFiles/CMakeOutput.log
+          fi
