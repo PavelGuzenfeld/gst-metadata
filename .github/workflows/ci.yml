@@ -178,6 +178,9 @@ jobs:
 
       - name: Run cppcheck
         run: |
+          echo "=== cppcheck version ==="
+          cppcheck --version
+          echo "=== running cppcheck ==="
           cppcheck \
             --project=build/compile_commands.json \
             --enable=warning,style,performance \
@@ -185,9 +188,11 @@ jobs:
             --inline-suppr \
             --template='{file}:{line}: {severity}: {message} [{id}]' \
             --quiet \
-            --output-file=cppcheck-results.txt || true
+            --output-file=cppcheck-results.txt 2>&1 || true
+          echo "=== cppcheck-results.txt ($(wc -c < cppcheck-results.txt) bytes) ==="
+          cat cppcheck-results.txt || true
+          echo "=== end ==="
           if [ -s cppcheck-results.txt ]; then
-            cat cppcheck-results.txt
             echo "cppcheck found issues"
             exit 1
           fi
