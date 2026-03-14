@@ -3,4 +3,13 @@ unusedFunction
 unknownMacro
 duplInheritedMember
 constVariablePointer
+constVariableReference
+constVariable
+constParameter
+noConstructor
+useInitializationList
+knownConditionTrueFalse
+passedByValue
+uselessCallsSubstr
+useStlAlgorithm
 unmatchedSuppression
