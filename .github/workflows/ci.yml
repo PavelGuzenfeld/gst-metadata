@@ -178,17 +178,20 @@ jobs:
 
       - name: Run cppcheck
         run: |
-          OUTPUT=$(cppcheck \
+          cppcheck \
             --project=build/compile_commands.json \
             --enable=warning,style,performance \
             --suppressions-list=.cppcheck-suppressions \
             --inline-suppr \
-            --quiet 2>&1)
-          if [ -n "$OUTPUT" ]; then
-            echo "$OUTPUT"
+            --template='{file}:{line}: {severity}: {message} [{id}]' \
+            --quiet \
+            --output-file=cppcheck-results.txt || true
+          if [ -s cppcheck-results.txt ]; then
+            cat cppcheck-results.txt
             echo "cppcheck found issues"
             exit 1
           fi
+          echo "cppcheck passed"
 
       - name: Run clang-tidy
         run: >
