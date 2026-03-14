@@ -178,15 +178,12 @@ jobs:
 
       - name: Run cppcheck
         run: |
-          find include examples -name '*.hpp' -o -name '*.cpp' | \
-          xargs cppcheck \
+          cppcheck \
+            --project=build/compile_commands.json \
             --enable=warning,style,performance \
             --suppressions-list=.cppcheck-suppressions \
-            -I include -I examples/include \
-            $(pkg-config --cflags gstreamer-1.0 gstreamer-base-1.0 2>/dev/null | tr ' ' '\n' | grep '^-I' | tr '\n' ' ') \
             --error-exitcode=1 \
-            --inline-suppr \
-            --quiet
+            --inline-suppr
 
       - name: Run clang-tidy
         run: >
